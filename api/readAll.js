@@ -1,8 +1,8 @@
 var mongoose = require( 'mongoose' );
 var UserLocation = mongoose.model( 'UserLocation' );
 
-module.exports = ({ onSuccess , onError }) => {
-  UserLocation.find( {} , ( err , res ) => {
+module.exports = ({ query , onSuccess , onError }) => {
+  UserLocation.find( query , ( err , res ) => {
     if( err ){
         return onError( err );
     }
