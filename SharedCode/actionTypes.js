@@ -1,0 +1,2 @@
+export const __RECEIVE_CODE = "SHARED_CODE/__RECEIVE_CODE";
+export const __SEND_CODE = "SHARED_CODE/__SEND_CODE";

@@ -1,0 +1,49 @@
+import React from "react";
+import { connect } from "react-redux";
+import { bindActionCreators } from "redux";
+import * as _thisActionGroup from "actions";
+import style from "style";
+import applyHOCs from "renext-core/applyHOCs";
+import withSocket from "renext-core/withSocket";
+
+class SharedCode extends React.PureComponent {
+
+  componentDidMount(){
+    const { socket , receiveCode } = this.props;
+    socket.on("receiveCode" , ( code ) => {
+      receiveCode( code );
+    });
+  }
+
+  componentWillUnmount(){
+    socket.off("receiveCode");
+  }
+
+  render() {
+    const { code } = this.props;
+    return (
+      <div className="fullSpaceBFC">
+        <textarea
+          className={style.codeInput}
+          value={code}
+          onChange={this.sendCode}
+        />
+    </div>
+    )
+  }
+
+  sendCode = ( ev ) => {
+    const { sendCode , socket } = this.props;
+    sendCode( ev.target.value , socket );
+  }
+}
+
+export default applyHOCs([
+  withSocket,
+  connect(
+    state => ({
+      code: state.SharedCode.code
+    }),
+    dispatch => bindActionCreators( _thisActionGroup , dispatch )
+  )
+] , SharedCode );
