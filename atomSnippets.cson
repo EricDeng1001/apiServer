@@ -1,0 +1,342 @@
+'.source.js.jsx':
+  UIComponent:
+    prefix: 'UIC'
+    body: """
+    import React from 'react';
+    import style from 'style';
+
+    class ${1:ComponentName} extends React.PureComponent {
+      constructor( props ){
+        super( props );
+      }
+
+      render(){
+        const { ${2:propsName} } = this.props;
+        return (
+          <div className="container">
+            $3
+          </div>
+        );
+      }
+    };
+
+    export default ${1:ComponentName};
+    """
+  ConnectedComponent:
+    prefix:'CC'
+    body: """
+    import React from 'react';
+    import { connect } from 'react-redux';
+    import { bindActionCreators } from 'redux';
+    ${2:import * as actionsCreators from 'actions';}
+    import ${4:UIname} from 'UI/${4:UIname}';
+    import style from 'style';
+
+    class ${1:ComponentName} extends React.PureComponent {
+        constructor( props ){
+          super( props );
+        }
+
+        render(){
+          const { ${3:propsName} } = this.props;
+          return (
+            <div className="container">
+              <${4:UIname}
+                ${5:propsName}={${5:propsName}}
+              />
+            </div>
+          );
+        }
+    };
+
+    export default connect(
+      state => ({
+        ${2:loadState:},
+        ${3:propsName}:state.Manager.${3:propsName},
+        $6
+      }),
+      ${2:dispatch => bindActionCreators( actionsCreators , dispatch )}
+    )( ${1:ComponentName} );
+    """
+  networkState:
+    prefix: "NS"
+    body: """
+    $1: {
+      pending: 0,
+      resolved: 0,
+      rejected: 0,
+      lastFailed: false,
+      failedReason: "network", // "json" , "server"
+      failedDetail: null
+    },
+    """
+  AnimationComponent:
+    prefix: "AC"
+    body: """
+    import React from 'react';
+    import $2 from 'style';
+    import { CSSTransition } from 'react-transition-group';
+    import getClassNames from 'Algorithm/getAnimationNames';
+
+    const classNames = getClassNames( $2 );
+    const timeout = {
+      enter: $3,
+      exit: $4
+    };
+
+    class $1 extends React.PureComponent {
+      constructor( props ){
+        super( props );
+      }
+
+      render(){
+        const { children } = this.props;
+        return (
+          <CSSTransition
+            in
+            classNames={classNames}
+            timeout={timeout}
+            appear
+          >
+            <section className="container">
+              {children}
+            </section>
+          </CSSTransition>
+        );
+      }
+    };
+
+    export default $1;
+    """
+  animationLess:
+    prefix: "AL"
+    body:"""
+    @enterTime: 300ms;
+    @exitTime: 200ms;
+    .appear,
+    .enter {
+      $1
+    }
+
+    .appearActive,
+    .enterActive {
+      $2
+    }
+
+    .exit {
+      $3
+    }
+
+    .exitActive {
+      $4
+    }
+
+    """
+  defineSyncActionType:
+    prefix: 'DSAT'
+    body: 'export const __${1:actionTypeName} = "${2:ScopeName}/__${1:actionTypeName}";'
+  defineAsyncActionType:
+    prefix: 'DAAT'
+    body: """
+    export const __ASYNC_${1:actionName} = {
+      pending: "${2:scopeName}/__${1:actionName}_PENDING",
+      resolved: "${2:scopeName}/__${1:actionName}_RESOLVED",
+      rejected: "${2:scopeName}/__${1:actionName}_REJECTED",
+    };
+    """
+  importActionType:
+    prefix: 'IAT'
+    body: """
+    import {
+      $1
+    } from 'actionTypes';
+    """
+  importSyncAction:
+    prefix: 'ISAT'
+    body: '__${1:actionType},'
+  importAsyncAction:
+    prefix: 'IAAT'
+    body: '__ASYNC_${1:actionType},'
+  defineSyncActionCreator:
+    prefix: 'DSAC'
+    body: """
+    /*
+    defineSyncActionCreator $1 start
+    */
+    let ${1:actionsCreatorName}Counter = 0;
+    export const ${1:actionsCreatorName} = (${2:args}) => ({
+        type: __${3:type},
+        payload: {
+
+        },
+        id: ${1:actionsCreatorName}Counter++
+    });
+    /*
+    defineSyncActionCreator $1 end
+    */
+    """
+  defineAsyncActionCreator:
+    prefix: 'DAAC'
+    body: """
+    /*
+    defineAsyncActionCreator $1 start
+    */
+    let ${1:actionName}Counter = 0;
+    const ${1:actionName}Start = ($4) => ({
+        type: __ASYNC_${2:typeName}.pending,
+        payload: {
+          $4
+        },
+        id: ${1:actionName}Counter
+    });
+    const ${1:actionName}Resolved = ( response ) => ({
+        type: __ASYNC_${2:typeName}.resolved,
+        payload: {
+          response
+        },
+        id: ${1:actionName}Counter
+    });
+    const ${1:actionName}Rejected = ( reason , detail ) => ({
+        type: __ASYNC_${2:typeName}.rejected,
+        payload: {
+          reason,
+          detail
+        },
+        id: ${1:actionName}Counter
+    });
+
+    export const ${1:actionName} = (${3:args}) => ( dispatch , getState ) => {
+      const oldState = getState();
+      const reqId = ++${1:actionName}Counter;
+      const dispatchLastest = action => {
+        if( reqId === ${1:actionName}Counter ){
+          dispatch( action );
+        }
+      }
+      dispatch( ${1:actionName}Start($4) );
+      fetch( ${5:url} , {
+          method: ${6:'POST'},
+          headers: {
+            'Content-Type': '${7:application/json}',
+            $8
+          },
+          body: $9
+      })
+      .then( response => {
+        if( !response.ok ){
+          dispatchLastest( ${1:actionName}Rejected( "server" , response.status ) );
+          return;
+        }
+        response.json()
+        .then( json => dispatchLastest( ${1:actionName}Resolved( json ) ) )
+        .catch( err => {
+          dispatchLastest( ${1:actionName}Rejected( "json" , err ) )
+        });
+      })
+      .catch( err => {
+          dispatchLastest( ${1:actionName}Rejected( "network" , err ) );
+      });
+    };
+
+    /*
+    defineAsyncActionCreator $1 end
+    */
+    """
+  importActionCreator:
+    prefix: 'IAC'
+    body: 'import * as actionCreators from "actionTypes";'
+  importActionCreatorFrom:
+    prefix: 'IACF'
+    body: 'import { actions as ${1:modelName}ActionCreators } from "Connected/${1:modelName}";'
+  defineReducer:
+    prefix: 'DR'
+    body: """
+    export default ( state = {
+        ${1:defaultState},
+        $2
+      } , { payload , type , id } ) => {
+        switch( type ){
+          $3
+          default:
+            return state;
+        }
+      }
+    """
+  defineSyncActionReducer:
+    prefix: 'DSAR'
+    body: """
+    /*
+    defineSyncActionReducer __$1 start
+    */
+    case __${1:actionTypeName}: {
+      return {
+        ...state,
+        $2
+      };
+    }
+    /*
+    defineSyncActionReducer __$1 end
+    */
+    """
+  defineAsyncActionReducer:
+    prefix: 'DAAR'
+    body: """
+    /*
+    defineAsyncActionReducer __$1 start
+    */
+    case __ASYNC_${1:actionName}.pending: {
+      let $5 = { ...state.$5 };
+      $5.lastFailed = false;
+      $5.pending++;
+      return {
+        ...state,
+        $5,
+        $2
+      };
+    }
+    case __ASYNC_${1:actionName}.resolved: {
+      let { response } = payload;
+      let $5 = { ...state.$5 };
+      $5.resolved++;
+      $5.pending--;
+      return {
+        ...state,
+        $5,
+        $3
+      };
+    }
+    case __ASYNC_${1:actionName}.rejected: {
+      let { reason , detail } = payload;
+      let $5 = { ...state.$5 };
+      $5.rejected++;
+      $5.pending--;
+      $5.lastFailed = true;
+      $5.failedReason = reason;
+      $5.failedDetail = detail;
+      return {
+        ...state,
+        $5,
+        $4
+      };
+    }
+    /*
+    defineAsyncActionReducer __$1 end
+    */
+    """
+  importReducerFrom:
+    prefix: "IRF"
+    body: 'import { reducer as ${1:modelName} } from "Connected/${1:modelName}";'
+  defineAsyncLoad:
+    prefix: "DAL"
+    body: "const ${1:modelName} = asyncComponent( () => import('${2:packageName}/${1:modelName}') )";
+  importUIComponent:
+    prefix: "IUIC"
+    body: 'import $1 from "UI/$1"$2;'
+  SM:
+    prefix: 'SM'
+    body: """
+    /*
+    **   Antinux Innovation
+    **   Author: Eric Deng
+    */
+    """
